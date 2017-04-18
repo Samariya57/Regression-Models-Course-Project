@@ -1,1 +1,2 @@
-# Regression-Models-Course-Project
+## Data Science Specialization by Johns Hopkins University
+### Regression Models Course 
