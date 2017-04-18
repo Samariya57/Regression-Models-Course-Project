@@ -1,0 +1,74 @@
+---
+title: "MPG trend research"
+author: "Mariia Danilenko"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+#Introduction  
+We are interested in exploring the relationship between a set of variables and miles per gallon. We are particularly interested in the following two questions:
+
+“Is an automatic or manual transmission better for MPG?”  
+"Quantify the MPG difference between automatic and manual transmissions."  
+
+#Analysis  
+## Using data
+Our research is based on build in R dataset ***mtcars***.
+We use **am** and **MPG** variables for the first version of calculations and all columns for the second.
+```{r, message=FALSE}
+library(datasets)
+head(mtcars)
+```
+
+## First model
+First linear regression model is based on only two variables **MPG** and **am**. As first step let's take a look at mean values aggregated by transmission type.
+```{r}
+boxplot(mtcars$mpg~factor(mtcars$am, labels=c("Automatic", "Manual")),
+        col=c("lightblue", "darkblue"), xlab="Transmission type", 
+        ylab="Mean MPG")
+
+Means<-tapply(mtcars$mpg, factor(mtcars$am), mean)
+names(Means)<-c("Automatic", "Manual")
+Means
+as.numeric(Means[2]-Means[1])
+```
+As we can see, Manual average **MPG** is 7.245 miles per galon higher than Automatic average **MPG**. 
+We got the same result for the difference when constructed linear model on **AM** variable.      
+```{r}
+am_fit<-lm(mpg~am, data=mtcars)
+summary(am_fit)$coef
+```
+
+
+## Advance model  
+The best way to compare **MPG** for Manual and Automatic transmission types is to take a look at car models with same other technical features (CYL, WT and e.c.). However, we don't have this information and will try to explore linear regression model for **MPG** depends on all known variables.  
+Also, we use function STEPAIC to obtain columns with the best result for different linear models.
+```{r, message=FALSE}
+library(MASS)
+all_fit<-lm(mpg~., data=mtcars)
+summary(all_fit)$coef
+best_fit <- stepAIC(lm(mpg~., data=mtcars), trace=0)
+summary(best_fit)$coef
+```
+Comparing three models:
+```{r}
+anova(am_fit, best_fit, all_fit)
+```
+S statistics says that adding **qsec** and **wt** is necessary, so we select **best_fit**. 
+If we think about interpretation of variables, choosing *Weight* and *Transmission type* looks logically, but **QSec** is not. However, **QSec** has to depend on **Cyl** and **HP**, hence **MPG** depends on **Cyl** and **HP** too.       
+
+## Residuals for selected model  
+Let's plot residualts for the best_fit model:
+```{r}
+par(mfcol=c(2,2))
+plot(best_fit)
+```
+There are no patterns at first, second and last plots.
+Q-Q plot looks normal.
+Based on these results we approbate **best_fit** model.   
+
+#Conclusion  
+**MPG** definetely depends on **am**. The rate differs according to a constructed model, but it is always will be positive: when you switch Automatic to Manual MPG grows. 
+For the **best_fit**, where predictors are: **wt**, **am**, **qsec**, this rate is 2.9 mpg. 
